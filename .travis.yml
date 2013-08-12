@@ -13,9 +13,12 @@ env:
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install --use-mirrors tox
+  - pip install --use-mirrors pytest pytest-cov tox coveralls
 
 script:
-  - python setup.py test
+  - py.test --cov=flask_relief --cov=test_flask_relief.py
   - tox -e style
   - python -c "import sys; sys.exit(sys.version_info[:2] > (2, 6))" || tox -e packaging
+
+after_success:
+  - coveralls
