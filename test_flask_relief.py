@@ -23,6 +23,10 @@ from flask.ext.relief.crypto import encrypt_once, decrypt_once
 
 @pytest.fixture
 def app(request):
+    # XXX: __name__ doesn't work due to a bug in Flask / an optional method not
+    # implemented by a py.test meta path loader. py.test has the method in the
+    # trunk version, so let's change this to __name__ when that version comes
+    # out, currently we are at pytest 2.3.5
     app = Flask('__main__')
     app.config['SECRET_KEY'] = b'secret'
     app.testing = True
