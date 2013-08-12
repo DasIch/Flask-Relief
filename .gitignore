@@ -1,0 +1,5 @@
+*.pyc
+.DS_Store
+.tox/
+*.egg/
+*.egg-info/
