@@ -91,6 +91,12 @@ class TestCSRFToken(object):
             with pytest.raises(AssertionError):
                 client.post('/', data={'csrf_token': u'bad_csrf_token'})
 
+        with app.test_client(use_cookies=False) as client:
+            with client.get('/') as response:
+                randomized_csrf_token = response.data
+            with pytest.raises(AssertionError):
+                client.post('/', data={'csrf_token': randomized_csrf_token})
+
 
 def test_generate_csrf_token():
     token = generate_csrf_token()
