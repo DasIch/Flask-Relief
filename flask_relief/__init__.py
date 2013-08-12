@@ -11,7 +11,7 @@ import sys
 import relief
 
 
-def inherit_relief_exports():
+def _inherit_relief_exports():
     module = sys.modules[__name__]
     for attribute in relief.__all__:
         if not hasattr(module, attribute):
@@ -20,4 +20,4 @@ def inherit_relief_exports():
 
 
 __all__ = []
-inherit_relief_exports()
+_inherit_relief_exports()
