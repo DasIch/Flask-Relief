@@ -55,21 +55,15 @@ class CSRFToken(relief.Unicode):
 
     def validate(self, context=None):
         super(CSRFToken, self).validate(context)
-        if request.method != 'POST':
-            self.is_valid = False
-        elif '_csrf_token' not in session:
-            self.is_valid = False
-        elif self.value is relief.Unspecified:
-            self.is_valid = False
-        elif self.value is relief.NotUnserializable:
-            self.is_valid = False
-        else:
+        if request.method == 'POST' and '_csrf_token' in session:
             try:
                 unrandomized_value = unrandomize_csrf_token(self.value)
             except TypeError:
                 self.is_valid = False
             else:
                 self.is_valid = unrandomized_value == session['_csrf_token']
+        else:
+            self.is_valid = False
         return self.is_valid
 
 
