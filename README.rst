@@ -1,6 +1,9 @@
 Flask-Relief
 ============
 
+.. image:: https://travis-ci.org/DasIch/Flask-Relief.png?branch=master
+   :target: https://travis-ci.org/DasIch/Flask-Relief
+
 Flask-Relief is a Flask_ extension wrapping Relief_ and providing Flask as well
 as web specific utilities.
 
