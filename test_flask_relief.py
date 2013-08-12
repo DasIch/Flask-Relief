@@ -65,6 +65,9 @@ def test_inherits_all_relief_attributes():
 
 
 class TestCSRFToken(object):
+    def test_in__all__(self):
+        assert 'CSRFToken' in flask.ext.relief.__all__
+
     def test_default_token(self, app):
         with app.test_request_context(method='GET'):
             element = CSRFToken()

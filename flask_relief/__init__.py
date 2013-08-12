@@ -75,5 +75,5 @@ def _inherit_relief_exports():
             module.__all__.append(attribute)
 
 
-__all__ = []
+__all__ = ['CSRFToken']
 _inherit_relief_exports()
