@@ -5,6 +5,8 @@ help:
 	@echo "make test-all      - Run all tests"
 	@echo "make coverage      - Create coverage data"
 	@echo "make view-coverage - View coverage data"
+	@echo "make docs          - Build the HTML documentation"
+	@echo "make view-docs     - View the HTML documentation"
 
 dev:
 	pip install -e .
@@ -23,4 +25,10 @@ coverage:
 view-coverage: coverage
 	open htmlcov/index.html
 
-.PHONY: help dev test test-all coverage view-coverage
+docs:
+	make -C docs html
+
+view-docs: docs
+	open docs/_build/html/index.html
+
+.PHONY: help dev test test-all coverage view-coverage docs view-docs
