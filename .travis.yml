@@ -21,11 +21,11 @@ matrix:
       env: REQUIREMENTS=devel PACKAGING=true
   include:
     - python: 2.6
-      env: REQUIREMENTS=lowest
+      env: REQUIREMENTS=lowest DOCUMENTATION=true
     - python: 2.6
-      env: REQUIREMENTS=release
+      env: REQUIREMENTS=release DOCUMENTATION=true
     - python: 2.6
-      env: REQUIREMENTS=devel
+      env: REQUIREMENTS=devel DOCUMENTATION=true
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
@@ -36,7 +36,9 @@ script:
   - py.test --cov=flask_relief --cov=test_flask_relief.py
   - tox -e style
   # ensure that the docs stuff runs only once
-  - python -c "import sys; sys.exit(sys.version_info[:2] == (2, 6))" || tox -e docs,docs3,docs-linkcheck
+  - if [[ DOCUMENTATION = true ]]; then tox -e docs; fi
+  - if [[ DOCUMENTATION = true ]]; then tox -e docs3; fi
+  - if [[ DOCUMENTATION = true ]]; then tox -e docs-linkcheck; fi
   - if [[ PACKAGING = true ]]; then tox -e packaging; fi
 
 after_success:
