@@ -1,11 +1,14 @@
 help:
-	@echo "make help     - Show this text"
-	@echo "make dev      - Installs development requirements"
-	@echo "make test     - Run tests"
-	@echo "make test-all - Run all tests"
+	@echo "make help          - Show this text"
+	@echo "make dev           - Installs development requirements"
+	@echo "make test          - Run tests"
+	@echo "make test-all      - Run all tests"
+	@echo "make coverage      - Create coverage data"
+	@echo "make view-coverage - View coverage data"
 
 dev:
 	pip install -e .
+	pip install pytest-cov
 
 test:
 	python setup.py test
@@ -13,4 +16,11 @@ test:
 test-all:
 	tox
 
-.PHONY: help dev test test-all
+coverage:
+	py.test --cov=flask_relief --cov=test_flask_relief.py
+	coverage html
+
+view-coverage: coverage
+	open htmlcov/index.html
+
+.PHONY: help dev test test-all coverage view-coverage
