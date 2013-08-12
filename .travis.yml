@@ -13,12 +13,14 @@ env:
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install --use-mirrors pytest pytest-cov tox coveralls
+  - pip install --use-mirrors pytest pytest-cov tox coveralls sphinx
   - pip install .
 
 script:
   - py.test --cov=flask_relief --cov=test_flask_relief.py
   - tox -e style
+  # ensure that the docs stuff runs only once
+  - python -c "import sys; sys.exit(sys.version_info[:2] == (2, 6))" || tox -e docs,docs3,docs-linkcheck
   - python -c "import sys; sys.exit(sys.version_info[:2] > (2, 6))" || tox -e packaging
 
 after_success:
