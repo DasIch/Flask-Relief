@@ -15,9 +15,17 @@ matrix:
   exclude:
     - python: 2.6
       env: REQUIREMENTS=lowest PACKAGING=true
+    - python: 2.6
+      env: REQUIREMENTS=release PACKAGING=true
+    - python: 2.6
+      env: REQUIREMENTS=devel PACKAGING=true
   include:
     - python: 2.6
       env: REQUIREMENTS=lowest
+    - python: 2.6
+      env: REQUIREMENTS=release
+    - python: 2.6
+      env: REQUIREMENTS=devel
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
