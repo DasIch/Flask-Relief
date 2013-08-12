@@ -18,7 +18,7 @@ class PyTest(TestCommand):
 
 setup(
     name='Flask-Relief',
-    version='0.1.0',
+    version='0.1.0-dev',
     license='BSD',
     author='Daniel Neuhäuser',
     author_email='ich@danielneuhaeuser.de',
