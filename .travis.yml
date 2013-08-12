@@ -13,6 +13,8 @@ env:
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - python setup.py test
   - pip install --use-mirrors tox
+
+script:
+  - python setup.py test
   - tox -e style,packaging
