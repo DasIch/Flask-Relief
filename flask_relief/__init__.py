@@ -13,15 +13,11 @@ import relief
 
 def inherit_relief_exports():
     module = sys.modules[__name__]
-    if hasattr(module, '__all__'):
-        __all__ = module.__all__
-    else:
-        __all__ = []
-        setattr(module, '__all__', __all__)
     for attribute in relief.__all__:
         if not hasattr(module, attribute):
             setattr(module, attribute, getattr(relief, attribute))
-            __all__.append(attribute)
+            module.__all__.append(attribute)
 
 
+__all__ = []
 inherit_relief_exports()
