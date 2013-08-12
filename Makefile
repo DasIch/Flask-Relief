@@ -13,4 +13,4 @@ test:
 test-all:
 	tox
 
-.PHONY: help test test-all
+.PHONY: help dev test test-all
