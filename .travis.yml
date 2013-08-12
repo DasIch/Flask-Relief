@@ -17,4 +17,5 @@ install:
 
 script:
   - python setup.py test
-  - tox -e style,packaging
+  - tox -e style
+  - python -c "import sys; sys.exit(sys.version_info[:2] > (2, 6))" || tox -e packaging
