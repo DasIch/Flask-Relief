@@ -18,7 +18,9 @@ from flask.ext.relief.csrf import (
     generate_csrf_token, touch_csrf_token, randomize_csrf_token,
     unrandomize_csrf_token
 )
-from flask.ext.relief.crypto import encrypt_once, decrypt_once
+from flask.ext.relief.crypto import (
+    encrypt_once, decrypt_once, constant_time_equal
+)
 
 
 @pytest.fixture
@@ -141,3 +143,12 @@ def test_decrypt_once():
     key, ciphertext = encrypt_once(plaintext)
     unencrypted_ciphertext = decrypt_once(key, ciphertext)
     assert unencrypted_ciphertext == plaintext
+
+
+def test_constant_time_equal():
+    # testing whether the constant time property holds is impractical, so we
+    # don't
+    assert constant_time_equal(b'foo', b'foo')
+    assert not constant_time_equal(b'foo', b'bar')
+    assert constant_time_equal(u'foo', u'foo')
+    assert not constant_time_equal(u'foo', u'bar')

@@ -14,6 +14,7 @@ from flask import request, session
 from flask.ext.relief.csrf import (
     touch_csrf_token, randomize_csrf_token, unrandomize_csrf_token
 )
+from flask.ext.relief.crypto import constant_time_equal
 
 
 class CSRFToken(relief.Unicode):
@@ -61,7 +62,9 @@ class CSRFToken(relief.Unicode):
             except TypeError:
                 self.is_valid = False
             else:
-                self.is_valid = unrandomized_value == session['_csrf_token']
+                self.is_valid = constant_time_equal(
+                    unrandomized_value, session['_csrf_token']
+                )
         else:
             self.is_valid = False
         return self.is_valid

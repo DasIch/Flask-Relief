@@ -8,7 +8,7 @@
 """
 import os
 
-from flask.ext.relief._compat import int_to_byte
+from flask.ext.relief._compat import int_to_byte, PY2
 
 
 def xor_bytes(a, b):
@@ -35,3 +35,26 @@ def decrypt_once(key, ciphertext):
     the plaintext.
     """
     return xor_bytes(key, ciphertext)
+
+
+def constant_time_equal(a, b):
+    """
+    Returns `True` if the strings `a` and `b` are equal. `a` and `b` are
+    compared in constant time, short circuiting if they are of different
+    length.
+
+    This function exposes the length of the strings that are compared but does
+    not expose upto which position the strings are equal. This makes it
+    suitable for comparisions of untrusted with secret strings, if the length
+    of the secret string is public knowledge.
+    """
+    if len(a) != len(b):
+        return False
+    result = 0
+    if isinstance(a, bytes) and isinstance(b, bytes) and not PY2:
+        for x, y in zip(a, b):
+            result |= x ^ y
+    else:
+        for x, y in zip(a, b):
+            result |= ord(x) ^ ord(y)
+    return result == 0
