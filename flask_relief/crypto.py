@@ -7,6 +7,10 @@
     :license: BSD, see LICENSE.rst for details
 """
 import os
+try:
+    from hmac import compare_digest as _constant_time_equal
+except ImportError:
+    _constant_time_equal = None
 
 from flask.ext.relief._compat import int_to_byte, PY2
 
@@ -43,6 +47,8 @@ def constant_time_equal(a, b):
     compared in constant time, short circuiting if they are of different
     length.
 
+    *May* raise a :exc:`ValueError` if `a` or `b` is a non-ascii unicode string.
+
     This function exposes the length of the strings that are compared but does
     not expose upto which position the strings are equal. This makes it
     suitable for comparisions of untrusted with secret strings, if the length
@@ -56,6 +62,15 @@ def constant_time_equal(a, b):
                  If this assumption does not hold, the comparison will not
                  occur in constant time.
     """
+    # Checking whether `a` and `b` are non-ascii requires us to iterate over
+    # them, which would leak timing information. `hmac.compare_digest` does
+    # perform such a check -- presumably this is possible in C without leaking
+    # timing information -- and raises a `ValueError`. This is why a
+    # `ValueError` *may* be raised by this function, if the inputs are
+    # non-ascii. This behaviour is undesirable but more desireable than leaking
+    # timing information.
+    if _constant_time_equal is not None:
+        return _constant_time_equal(a, b)
     if len(a) != len(b):
         return False
     result = 0

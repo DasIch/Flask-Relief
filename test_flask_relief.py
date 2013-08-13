@@ -152,3 +152,9 @@ def test_constant_time_equal():
     assert not constant_time_equal(b'foo', b'bar')
     assert constant_time_equal(u'foo', u'foo')
     assert not constant_time_equal(u'foo', u'bar')
+
+
+@pytest.mark.skipif('sys.version_info < (3, 3)')
+def test_constant_time_equal_non_ascii():
+    with pytest.raises(TypeError):
+        constant_time_equal(u'ä', u'ä')
