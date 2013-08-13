@@ -36,10 +36,10 @@ script:
   - py.test --cov=flask_relief --cov=test_flask_relief.py
   - tox -e style
   # ensure that the docs stuff runs only once
-  - "[[ $DOCUMENTATION == true ]] && tox -e docs"
-  - "[[ $DOCUMENTATION == true ]] && tox -e docs3"
-  - "[[ $DOCUMENTATION == true ]] && tox -e docs-linkcheck"
-  - "[[ $PACKAGING == true ]] && tox -e packaging"
+  - if [[ DOCUMENTATION = true ]]; then tox -e docs; fi
+  - if [[ DOCUMENTATION = true ]]; then tox -e docs3; fi
+  - if [[ DOCUMENTATION = true ]]; then tox -e docs-linkcheck; fi
+  - if [[ PACKAGING = true ]]; then tox -e packaging; fi
 
 after_success:
   - coveralls
