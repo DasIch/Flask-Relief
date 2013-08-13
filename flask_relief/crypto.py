@@ -47,7 +47,8 @@ def constant_time_equal(a, b):
     compared in constant time, short circuiting if they are of different
     length.
 
-    *May* raise a :exc:`ValueError` if `a` or `b` is a non-ascii unicode string.
+    *May* raise a :exc:`ValueError` if `a` or `b` is a non-ascii unicode
+    string.
 
     This function exposes the length of the strings that are compared but does
     not expose upto which position the strings are equal. This makes it
