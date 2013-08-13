@@ -47,6 +47,14 @@ def constant_time_equal(a, b):
     not expose upto which position the strings are equal. This makes it
     suitable for comparisions of untrusted with secret strings, if the length
     of the secret string is public knowledge.
+
+    .. warning:: The constant time property of this function does not hold if
+                 non-ascii unicode strings are compared.
+
+    .. warning:: This function assumes that if the interpreter caches small
+                 integers, it does cache all integers from 0 to 256 inclusive.
+                 If this assumption does not hold, the comparison will not
+                 occur in constant time.
     """
     if len(a) != len(b):
         return False
