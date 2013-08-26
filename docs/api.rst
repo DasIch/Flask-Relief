@@ -7,6 +7,3 @@ API
 
 .. autoclass:: Secret
    :members:
-
-.. autoclass:: CSRFToken
-   :members:
