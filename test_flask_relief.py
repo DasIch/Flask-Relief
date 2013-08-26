@@ -73,28 +73,27 @@ class TestSecret(object):
 
 
 class TestRelief(object):
-    def test_context_injection(self, app):
-        Relief(app)
+    @pytest.fixture
+    def relief(self, app):
+        return Relief(app)
 
-        @app.route('/')
-        def foo():
-            return render_template_string(u'{{ csrf_token }}')
+    @pytest.fixture
+    def csrf_app(self, app, relief):
+        @app.route('/', methods=['GET', 'POST'])
+        def index():
+            if request.method == 'GET':
+                return render_template_string(u'{{ csrf_token }}')
+            return u'success'
+        return app
 
-        with app.test_client() as client:
+    def test_context_injection(self, csrf_app):
+        with csrf_app.test_client() as client:
             with client.get('/') as response:
                 assert response.status_code == 200
                 assert response.data
 
-    def test_csrf_checking(self, app):
-        Relief(app)
-
-        @app.route('/', methods=['GET', 'POST'])
-        def foo():
-            if request.method == 'GET':
-                return render_template_string(u'{{ csrf_token }}')
-            return u'success'
-
-        with app.test_client() as client:
+    def test_csrf_checking(self, csrf_app):
+        with csrf_app.test_client() as client:
             csrf_token = client.get('/').data
             with client.post('/', data={'csrf_token': csrf_token}) as response:
                 assert response.status_code == 200
