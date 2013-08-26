@@ -8,10 +8,10 @@
 """
 import relief
 import pytest
-from flask import Flask, session, request
+from flask import Flask, session, render_template_string, request
 
 import flask.ext.relief
-from flask.ext.relief import Secret, CSRFToken
+from flask.ext.relief import Secret, Relief
 from flask.ext.relief.csrf import generate_csrf_token, touch_csrf_token
 from flask.ext.relief.crypto import (
     encrypt_once, decrypt_once, constant_time_equal, mask_secret, unmask_secret
@@ -72,40 +72,42 @@ class TestSecret(object):
         assert second_element.value == u'foobar'
 
 
-class TestCSRFToken(object):
-    def test_in__all__(self):
-        assert 'CSRFToken' in flask.ext.relief.__all__
+class TestRelief(object):
+    def test_context_injection(self, app):
+        Relief(app)
 
-    def test_default_token(self, app):
-        with app.test_request_context(method='GET'):
-            element = CSRFToken()
-            assert element.raw_value != session['_csrf_token']
-            assert element.value == session['_csrf_token']
-        with app.test_request_context(method='POST'):
-            element = CSRFToken()
-            assert element.value is relief.Unspecified
-
-    def test_validate(self, app):
-        @app.route('/', methods=['GET', 'POST'])
+        @app.route('/')
         def foo():
-            if request.method == 'GET':
-                return CSRFToken().raw_value
-            else:
-                assert CSRFToken(request.form['csrf_token']).validate()
-                return u'Success'
+            return render_template_string(u'{{ csrf_token }}')
 
         with app.test_client() as client:
             with client.get('/') as response:
-                randomized_csrf_token = response.data
-            client.post('/', data={'csrf_token': randomized_csrf_token})
-            with pytest.raises(AssertionError):
-                client.post('/', data={'csrf_token': u'bad_csrf_token'})
+                assert response.status_code == 200
+                assert response.data
 
-        with app.test_client(use_cookies=False) as client:
-            with client.get('/') as response:
-                randomized_csrf_token = response.data
-            with pytest.raises(AssertionError):
-                client.post('/', data={'csrf_token': randomized_csrf_token})
+    def test_csrf_checking(self, app):
+        Relief(app)
+
+        @app.route('/', methods=['GET', 'POST'])
+        def foo():
+            if request.method == 'GET':
+                return render_template_string(u'{{ csrf_token }}')
+            return u'success'
+
+        with app.test_client() as client:
+            csrf_token = client.get('/').data
+            with client.post('/', data={'csrf_token': csrf_token}) as response:
+                assert response.status_code == 200
+                assert response.data == b'success'
+
+            with client.post('/') as response:
+                assert response.status_code == 400
+
+            with client.post('/', data={'csrf_token': u'asd'}) as response:
+                assert response.status_code == 400
+
+            for _ in range(10):
+                assert client.get('/').data != csrf_token
 
 
 def test_generate_csrf_token():

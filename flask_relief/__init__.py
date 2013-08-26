@@ -9,7 +9,7 @@
 import sys
 
 import relief
-from flask import request, session
+from flask import request, abort
 
 from flask.ext.relief.csrf import touch_csrf_token
 from flask.ext.relief.crypto import (
@@ -37,51 +37,32 @@ class Secret(relief.Unicode):
             return relief.NotUnserializable
 
 
-class CSRFToken(Secret):
-    """
-    Represents a CSRF token. A token itself is generated in GET requests by
-    default and stored in the session under the key `'_csrf_token'`.
+class Relief(object):
+    # Methods that are defined by RFC 2616 to be safe and should not cause any
+    # actions beside retrieval of information.
+    CSRF_SAFE_METHODS = frozenset(['GET', 'HEAD'])
 
-    Whenever a :class:`CSRFToken` is created during a GET request it checks
-    whether a CSRF token is already in a session. If a token is already in the
-    session, it uses that token and randomizes it (more on that later),
-    otherwise it generates a new token, puts that into the session, and uses
-    the randomized version as a value.
+    def __init__(self, app=None):
+        if app is not None:
+            self.init_app(app)
 
-    This means that each user gets exactly one CSRF token, that lives as long
-    as the session.
+    def init_app(self, app):
+        app.context_processor(self._inject_csrf_token)
+        app.before_request(self._check_csrf_token)
 
-    For validation the given CSRF token is unrandomized and compared against
-    the token stored in the session, if both are equal everything is fine. If
-    they are different or a CSRF token hasn't even been given validation fails.
+    def _inject_csrf_token(self):
+        return {'csrf_token': mask_secret(touch_csrf_token())}
 
-    The randomization works by creating a `one-time pad (OTP)`_ of the CSRF
-    token, that is concatenated to the key of the OTP::
-
-        KEY || KEY ^ CSRF-TOKEN
-
-    What this means is that even though the CSRF token never changes, the CSRF
-    token as exposed through :class:`CSRFToken` is different and unpredictable
-    for every instance, which allows using the randomized CSRF token in
-    compressed encrypted communication without being vulnerable to compression
-    oracle attacks such as BREACH_.
-
-    .. _one-time pad (OTP): http://en.wikipedia.org/wiki/One-time_pad
-    .. _BREACH: http://breachattack.com/
-    """
-    def default_factory(self):
-        if request.method == 'GET':
-            return touch_csrf_token()
-        return relief.Unspecified
-
-    def validate(self, context=None):
-        super(CSRFToken, self).validate(context)
-        self.is_valid = (
-            '_csrf_token' in session and
-            self.value is not relief.NotUnserializable and
-            constant_time_equal(self.value, session['_csrf_token'])
-        )
-        return self.is_valid
+    def _check_csrf_token(self):
+        csrf_token = touch_csrf_token()
+        if request.method in self.CSRF_SAFE_METHODS:
+            return
+        try:
+            request_csrf_token = unmask_secret(request.form['csrf_token'])
+        except TypeError:
+            abort(400)
+        if not constant_time_equal(request_csrf_token, csrf_token):
+            abort(400)
 
 
 def _inherit_relief_exports():
@@ -92,5 +73,5 @@ def _inherit_relief_exports():
             module.__all__.append(attribute)
 
 
-__all__ = ['Secret', 'CSRFToken']
+__all__ = ['Secret', 'Relief']
 _inherit_relief_exports()
