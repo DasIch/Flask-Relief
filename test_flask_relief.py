@@ -6,21 +6,17 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
-from itertools import permutations
-
 import relief
 import pytest
 from flask import Flask, session, request
 
 import flask.ext.relief
 from flask.ext.relief import CSRFToken
-from flask.ext.relief.csrf import (
-    generate_csrf_token, touch_csrf_token, randomize_csrf_token,
-    unrandomize_csrf_token
-)
+from flask.ext.relief.csrf import generate_csrf_token, touch_csrf_token
 from flask.ext.relief.crypto import (
-    encrypt_once, decrypt_once, constant_time_equal
+    encrypt_once, decrypt_once, constant_time_equal, mask_secret, unmask_secret
 )
+from flask.ext.relief._compat import text_type
 
 
 @pytest.fixture
@@ -51,11 +47,6 @@ def csrf_token():
     return generate_csrf_token()
 
 
-@pytest.fixture
-def randomized_csrf_token(csrf_token):
-    return randomize_csrf_token(csrf_token)
-
-
 def test_has_all_attributes_mentioned_in_all():
     for attribute in flask.ext.relief.__all__:
         assert hasattr(flask.ext.relief, attribute)
@@ -74,8 +65,8 @@ class TestCSRFToken(object):
         with app.test_request_context(method='GET'):
             element = CSRFToken()
             assert element.value != session['_csrf_token']
-            unrandomized_value = unrandomize_csrf_token(element.value)
-            assert unrandomized_value == session['_csrf_token']
+            unmasked_value = unmask_secret(element.value)
+            assert unmasked_value == session['_csrf_token']
         with app.test_request_context(method='POST'):
             element = CSRFToken()
             assert element.value is relief.Unspecified
@@ -118,17 +109,25 @@ def test_touch_csrf_token(app):
     assert session['_csrf_token'] == token
 
 
-def test_randomize_csrf_token(csrf_token):
-    randomized = [randomize_csrf_token(csrf_token) for _ in range(10)]
-    for randomized_token in randomized:
-        assert randomized_token != csrf_token
-    for a, b in permutations(randomized, 2):
-        assert a != b
+@pytest.mark.parametrize('secret', [
+    u'foo', b'foo'
+])
+def test_mask_secret(secret):
+    masked = set(mask_secret(secret) for _ in range(10))
+    assert len(masked) == 10
+    for masked_secret in masked:
+        assert isinstance(masked_secret, text_type)
+        assert masked_secret != secret
 
 
-def test_unrandomize_csrf_token(csrf_token, randomized_csrf_token):
-    unrandomized_csrf_token = unrandomize_csrf_token(randomized_csrf_token)
-    assert unrandomized_csrf_token == csrf_token
+@pytest.mark.parametrize('secret', [
+    u'foo', b'foo'
+])
+def test_unmask_secret(secret):
+    masked = mask_secret(secret)
+    unmasked = unmask_secret(masked)
+    assert unmasked == secret
+    assert isinstance(unmasked, secret.__class__)
 
 
 def test_encrypt_once():

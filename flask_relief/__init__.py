@@ -11,10 +11,10 @@ import sys
 import relief
 from flask import request, session
 
-from flask.ext.relief.csrf import (
-    touch_csrf_token, randomize_csrf_token, unrandomize_csrf_token
+from flask.ext.relief.csrf import touch_csrf_token
+from flask.ext.relief.crypto import (
+    constant_time_equal, mask_secret, unmask_secret
 )
-from flask.ext.relief.crypto import constant_time_equal
 
 
 class CSRFToken(relief.Unicode):
@@ -51,19 +51,19 @@ class CSRFToken(relief.Unicode):
     """
     def default_factory(self):
         if request.method == 'GET':
-            return randomize_csrf_token(touch_csrf_token())
+            return mask_secret(touch_csrf_token())
         return relief.Unspecified
 
     def validate(self, context=None):
         super(CSRFToken, self).validate(context)
         if request.method == 'POST' and '_csrf_token' in session:
             try:
-                unrandomized_value = unrandomize_csrf_token(self.value)
+                unmasked_value = unmask_secret(self.value)
             except TypeError:
                 self.is_valid = False
             else:
                 self.is_valid = constant_time_equal(
-                    unrandomized_value, session['_csrf_token']
+                    unmasked_value, session['_csrf_token']
                 )
         else:
             self.is_valid = False

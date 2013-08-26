@@ -15,5 +15,7 @@ PY2 = sys.version_info[0] == 2
 
 if PY2:
     int_to_byte = chr
+    text_type = unicode
 else:
     int_to_byte = methodcaller('to_bytes', 1, 'big')
+    text_type = str

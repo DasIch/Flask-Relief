@@ -7,12 +7,13 @@
     :license: BSD, see LICENSE.rst for details
 """
 import os
+from binascii import b2a_hex, a2b_hex, Error as BinASCIIError
 try:
     from hmac import compare_digest as _constant_time_equal
 except ImportError:
     _constant_time_equal = None
 
-from flask.ext.relief._compat import int_to_byte, PY2
+from flask.ext.relief._compat import int_to_byte, PY2, text_type
 
 
 def xor_bytes(a, b):
@@ -82,3 +83,41 @@ def constant_time_equal(a, b):
         for x, y in zip(a, b):
             result |= ord(x) ^ ord(y)
     return result == 0
+
+
+def mask_secret(secret):
+    """
+    Returns a randomized version the given `secret` by creating an OTP
+    concatenated with the key used for the OTP. The returned string is
+    guraanteed to be ASCII encodeable.
+    """
+    if isinstance(secret, text_type):
+        tag = b'u'
+        secret = secret.encode('latin1')
+    else:
+        tag = b'b'
+    key, encrypted_secret = encrypt_once(tag + secret)
+    return b2a_hex(key + encrypted_secret).decode('ascii')
+
+
+def unmask_secret(masked_secret):
+    """
+    Unmasks a secret string that has been marked with :func:`mask_secret`.
+
+    Raises a :exc:`TypeError`, if `masked_secret` is invalid.
+    """
+    try:
+        key_encrypted_secret = a2b_hex(masked_secret)
+    except (TypeError, BinASCIIError) as error:
+        raise TypeError(*error.args)
+    length_of_parts = len(key_encrypted_secret) // 2
+    key = key_encrypted_secret[:length_of_parts]
+    encrypted_secret = key_encrypted_secret[length_of_parts:]
+    decrypted = decrypt_once(key, encrypted_secret)
+    tag, secret = decrypted[0:1], decrypted[1:]
+    if tag == b'u':
+        return secret.decode('latin1')
+    elif tag == b'b':
+        return secret
+    else:
+        raise NotImplementedError('secret masked with bad version')

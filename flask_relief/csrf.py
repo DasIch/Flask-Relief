@@ -8,11 +8,8 @@
 """
 from __future__ import division
 from random import SystemRandom
-from binascii import b2a_hex, a2b_hex, Error as BinASCIIError
 
 from flask import session
-
-from flask.ext.relief.crypto import encrypt_once, decrypt_once
 
 
 random = SystemRandom()
@@ -42,31 +39,3 @@ def touch_csrf_token():
     if '_csrf_token' not in session:
         session['_csrf_token'] = generate_csrf_token()
     return session['_csrf_token']
-
-
-def randomize_csrf_token(csrf_token):
-    """
-    Returns a randomized version the given `csrf_token` by creating an OTP
-    concatenated with the key used for the OTP. The returned string is
-    guraanteed to be ASCII encodeable.
-    """
-    csrf_token = csrf_token.encode('ascii')
-    key, encrypted_csrf_token = encrypt_once(csrf_token)
-    return b2a_hex(key + encrypted_csrf_token)
-
-
-def unrandomize_csrf_token(randomized_csrf_token):
-    """
-    Returns a CSRF token from a CSRF token randomized with
-    :func:`randomize_csrf_token`.
-
-    Raises a :exc:`TypeError` if the `randomized_csrf_token` is not randomized.
-    """
-    try:
-        randomized_csrf_token = a2b_hex(randomized_csrf_token)
-    except (TypeError, BinASCIIError) as error:
-        raise TypeError(*error.args)
-    length_of_parts = len(randomized_csrf_token) // 2
-    key = randomized_csrf_token[:length_of_parts]
-    encrypted_csrf_token = randomized_csrf_token[length_of_parts:]
-    return decrypt_once(key, encrypted_csrf_token).decode('ascii')
