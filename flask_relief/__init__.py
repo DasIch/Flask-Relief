@@ -17,6 +17,26 @@ from flask.ext.relief.crypto import (
 )
 
 
+class Secret(relief.Unicode):
+    """
+    Represents a secret string that should not be exposed to attackers.
+
+    Ensures security by masking the string, preventing compression oracle
+    attacks.
+
+    .. warning:: This does not prevent anyone from seeing the secret, if the
+                 connection to the client is unencrypted.
+    """
+    def serialize(self, value):
+        return mask_secret(value)
+
+    def unserialize(self, value):
+        try:
+            return unmask_secret(value)
+        except TypeError:
+            return relief.NotUnserializable
+
+
 class CSRFToken(relief.Unicode):
     """
     Represents a CSRF token. A token itself is generated in GET requests by
@@ -78,5 +98,5 @@ def _inherit_relief_exports():
             module.__all__.append(attribute)
 
 
-__all__ = ['CSRFToken']
+__all__ = ['Secret', 'CSRFToken']
 _inherit_relief_exports()

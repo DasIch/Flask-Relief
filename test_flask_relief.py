@@ -11,7 +11,7 @@ import pytest
 from flask import Flask, session, request
 
 import flask.ext.relief
-from flask.ext.relief import CSRFToken
+from flask.ext.relief import Secret, CSRFToken
 from flask.ext.relief.csrf import generate_csrf_token, touch_csrf_token
 from flask.ext.relief.crypto import (
     encrypt_once, decrypt_once, constant_time_equal, mask_secret, unmask_secret
@@ -55,6 +55,21 @@ def test_has_all_attributes_mentioned_in_all():
 def test_inherits_all_relief_attributes():
     for attribute in relief.__all__:
         assert hasattr(flask.ext.relief, attribute)
+
+
+class TestSecret(object):
+    def test_in__all__(self):
+        assert 'Secret' in flask.ext.relief.__all__
+
+    def test_masking(self):
+        element = Secret()
+        element.set_from_native(u'foobar')
+        assert element.value == u'foobar'
+        assert element.raw_value != u'foobar'
+
+        second_element = Secret(element.raw_value)
+        assert second_element.raw_value == element.raw_value
+        assert second_element.value == u'foobar'
 
 
 class TestCSRFToken(object):
