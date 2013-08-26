@@ -11,7 +11,7 @@ import pytest
 from flask import Flask, session, render_template_string, request
 
 import flask.ext.relief
-from flask.ext.relief import Secret, Relief
+from flask.ext.relief import Secret, Relief, WebForm
 from flask.ext.relief.csrf import generate_csrf_token, touch_csrf_token
 from flask.ext.relief.crypto import (
     encrypt_once, decrypt_once, constant_time_equal, mask_secret, unmask_secret
@@ -119,6 +119,28 @@ class TestRelief(object):
             client.get('/reset_token')
             with client.post('/', data={'csrf_token': csrf_token}) as response:
                 assert response.status_code == 400
+
+
+def test_web_form(app):
+    class SomeForm(WebForm):
+        foo = relief.Unicode
+
+    @app.route('/', methods=['GET', 'POST'])
+    def index():
+        return str(SomeForm().set_and_validate_on_submit())
+
+    with app.test_client() as client:
+        with client.get('/') as response:
+            assert response.status_code == 200
+            assert response.data == 'False'
+
+        with client.post('/') as response:
+            assert response.status_code == 200
+            assert response.data == 'False'
+
+        with client.post('/', data={'foo': u'foo'}) as response:
+            assert response.status_code == 200
+            assert response.data == 'True'
 
 
 def test_generate_csrf_token():

@@ -68,6 +68,14 @@ class Relief(object):
             abort(400)
 
 
+class WebForm(relief.Form):
+    def set_and_validate_on_submit(self, context=None):
+        if request.method == 'POST':
+            self.set_from_raw(request.form)
+            return self.validate(context=context)
+        return False
+
+
 def _inherit_relief_exports():
     module = sys.modules[__name__]
     for attribute in relief.__all__:
@@ -76,5 +84,5 @@ def _inherit_relief_exports():
             module.__all__.append(attribute)
 
 
-__all__ = ['Secret', 'Relief']
+__all__ = ['Secret', 'Relief', 'WebForm']
 _inherit_relief_exports()
