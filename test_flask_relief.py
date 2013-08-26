@@ -108,6 +108,18 @@ class TestRelief(object):
             for _ in range(10):
                 assert client.get('/').data != csrf_token
 
+    def test_reset_csrf_token(self, relief, csrf_app):
+        @csrf_app.route('/reset_token')
+        def reset_token():
+            relief.reset_csrf_token()
+            return u''
+
+        with csrf_app.test_client() as client:
+            csrf_token = client.get('/').data
+            client.get('/reset_token')
+            with client.post('/', data={'csrf_token': csrf_token}) as response:
+                assert response.status_code == 400
+
 
 def test_generate_csrf_token():
     token = generate_csrf_token()

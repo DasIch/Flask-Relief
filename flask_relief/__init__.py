@@ -9,7 +9,7 @@
 import sys
 
 import relief
-from flask import request, abort
+from flask import request, abort, session
 
 from flask.ext.relief.csrf import touch_csrf_token
 from flask.ext.relief.crypto import (
@@ -49,6 +49,9 @@ class Relief(object):
     def init_app(self, app):
         app.context_processor(self._inject_csrf_token)
         app.before_request(self._check_csrf_token)
+
+    def reset_csrf_token(self):
+        del session['_csrf_token']
 
     def _inject_csrf_token(self):
         return {'csrf_token': mask_secret(touch_csrf_token())}
