@@ -37,7 +37,7 @@ class Secret(relief.Unicode):
             return relief.NotUnserializable
 
 
-class CSRFToken(relief.Unicode):
+class CSRFToken(Secret):
     """
     Represents a CSRF token. A token itself is generated in GET requests by
     default and stored in the session under the key `'_csrf_token'`.
@@ -71,22 +71,16 @@ class CSRFToken(relief.Unicode):
     """
     def default_factory(self):
         if request.method == 'GET':
-            return mask_secret(touch_csrf_token())
+            return touch_csrf_token()
         return relief.Unspecified
 
     def validate(self, context=None):
         super(CSRFToken, self).validate(context)
-        if request.method == 'POST' and '_csrf_token' in session:
-            try:
-                unmasked_value = unmask_secret(self.value)
-            except TypeError:
-                self.is_valid = False
-            else:
-                self.is_valid = constant_time_equal(
-                    unmasked_value, session['_csrf_token']
-                )
-        else:
-            self.is_valid = False
+        self.is_valid = (
+            '_csrf_token' in session and
+            self.value is not relief.NotUnserializable and
+            constant_time_equal(self.value, session['_csrf_token'])
+        )
         return self.is_valid
 
 

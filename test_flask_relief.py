@@ -79,9 +79,8 @@ class TestCSRFToken(object):
     def test_default_token(self, app):
         with app.test_request_context(method='GET'):
             element = CSRFToken()
-            assert element.value != session['_csrf_token']
-            unmasked_value = unmask_secret(element.value)
-            assert unmasked_value == session['_csrf_token']
+            assert element.raw_value != session['_csrf_token']
+            assert element.value == session['_csrf_token']
         with app.test_request_context(method='POST'):
             element = CSRFToken()
             assert element.value is relief.Unspecified
@@ -90,7 +89,7 @@ class TestCSRFToken(object):
         @app.route('/', methods=['GET', 'POST'])
         def foo():
             if request.method == 'GET':
-                return CSRFToken().value
+                return CSRFToken().raw_value
             else:
                 assert CSRFToken(request.form['csrf_token']).validate()
                 return u'Success'
