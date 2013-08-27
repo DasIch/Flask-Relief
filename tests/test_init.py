@@ -6,12 +6,13 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
-import relief
 import pytest
-from flask import request, render_template_string
+import flask
+import relief
+from relief.validation import IsFalse, IsTrue
 
 import flask.ext.relief
-from flask.ext.relief import Secret, WebForm
+from flask.ext.relief import Secret, WebForm, Checkbox
 
 
 class TestModule(object):
@@ -44,8 +45,8 @@ class TestRelief(object):
     def csrf_app(self, app, extension):
         @app.route('/', methods=['GET', 'POST'])
         def index():
-            if request.method == 'GET':
-                return render_template_string(u'{{ csrf_token }}')
+            if flask.request.method == 'GET':
+                return flask.render_template_string(u'{{ csrf_token }}')
             return u'success'
         return app
 
@@ -111,3 +112,69 @@ class TestWebForm(object):
             with client.post('/', data={'foo': u'foo'}) as response:
                 assert response.status_code == 200
                 assert response.data == b'True'
+
+
+class TestCheckbox(object):
+    @pytest.fixture
+    def make_checkbox_app(self, app, extension):
+        def make_checkbox_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        <input type=checkbox
+                               name=foo
+                               {% if form.foo.value %}checked{% endif %}>
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_checkbox_app
+
+    def test_in__all__(self):
+        assert 'Checkbox' in flask.ext.relief.__all__
+
+    @pytest.mark.parametrize('form', [
+        WebForm.of({'foo': Checkbox.validated_by([IsFalse()])}),
+        WebForm.of({
+            'foo': Checkbox.using(default=True).validated_by([IsTrue()])
+        })
+    ])
+    def test_unchanged(self, make_checkbox_app, serve, browser, form):
+        checkbox_app = make_checkbox_app(form)
+        serve(checkbox_app)
+
+        browser.get('http://localhost:5000')
+        if form().foo.value:
+            assert u'checked' in browser.page_source
+        else:
+            assert u'checked' not in browser.page_source
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+    @pytest.mark.parametrize('form', [
+        WebForm.of({'foo': Checkbox.validated_by([IsTrue()])}),
+        WebForm.of({
+            'foo': Checkbox.using(default=True).validated_by([IsFalse()])
+        })
+
+    ])
+    def test_changed(self, make_checkbox_app, serve, browser, form):
+        checkbox_app = make_checkbox_app(form)
+        serve(checkbox_app)
+        browser.get('http://localhost:5000')
+        if form().foo.value:
+            assert u'checked' in browser.page_source
+        else:
+            assert u'checked' not in browser.page_source
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'checkbox':
+                input.click()
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source

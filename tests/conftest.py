@@ -6,7 +6,10 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
+from multiprocessing import Process
+
 import pytest
+import selenium.webdriver
 from flask import Flask
 
 from flask.ext.relief import Relief
@@ -35,3 +38,19 @@ def request_context(request, app):
 @pytest.fixture
 def extension(app):
     return Relief(app)
+
+
+@pytest.fixture
+def browser(request):
+    browser = selenium.webdriver.Firefox()
+    request.addfinalizer(browser.quit)
+    return browser
+
+
+@pytest.fixture
+def serve(request):
+    def serve(app):
+        process = Process(target=app.run)
+        request.addfinalizer(process.terminate)
+        process.start()
+    return serve

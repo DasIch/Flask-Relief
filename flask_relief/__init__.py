@@ -73,9 +73,19 @@ class Relief(object):
 class WebForm(relief.Form):
     def set_and_validate_on_submit(self, context=None):
         if request.method == 'POST':
-            self.set_from_raw(request.form)
+            raw_value = {}
+            for key in self:
+                raw_value[key] = request.form.get(key, relief.Unspecified)
+            self.set_from_raw(raw_value)
             return self.validate(context=context)
         return False
+
+
+class Checkbox(relief.Boolean):
+    def unserialize(self, value):
+        if value is relief.Unspecified:
+            return False
+        return True
 
 
 def _inherit_relief_exports():
@@ -86,5 +96,5 @@ def _inherit_relief_exports():
             module.__all__.append(attribute)
 
 
-__all__ = ['Secret', 'Relief', 'WebForm']
+__all__ = ['Secret', 'Relief', 'WebForm', 'Checkbox']
 _inherit_relief_exports()
