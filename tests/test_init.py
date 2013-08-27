@@ -10,9 +10,10 @@ import pytest
 import flask
 import relief
 from relief.validation import IsFalse, IsTrue
+from selenium.common.exceptions import ElementNotVisibleException
 
 import flask.ext.relief
-from flask.ext.relief import Secret, WebForm, Text, Password, Checkbox
+from flask.ext.relief import Secret, WebForm, Text, Password, Hidden, Checkbox
 
 
 class TestModule(object):
@@ -221,6 +222,52 @@ class TestPassword(object):
             if input.get_attribute('type') == 'password':
                 input.send_keys(u'foo')
         browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+
+class TestHidden(object):
+    @pytest.fixture
+    def make_hidden_app(self, app, extension):
+        def make_hidden_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form({'foo': u'foo'})
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        <input type=hidden
+                               name=foo
+                               value="{{ form.foo.raw_value }}">
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_hidden_app
+
+    def test_in__all__(self):
+        assert 'Hidden' in flask.ext.relief.__all__
+
+    def test(self, make_hidden_app, serve, browser):
+        class Form(WebForm):
+            foo = Hidden
+
+            def validate_foo(self, element, context):
+                return element.value == u'foo'
+
+        hidden_app = make_hidden_app(Form)
+        serve(hidden_app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'hidden':
+                with pytest.raises(ElementNotVisibleException):
+                    input.send_keys(u'bar')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        print browser.page_source
         assert u'success' in browser.page_source
 
 
