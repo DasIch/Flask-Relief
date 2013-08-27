@@ -28,6 +28,8 @@ class Secret(relief.Unicode):
                  connection to the client is unencrypted.
     """
     def serialize(self, value):
+        if value is relief.Unspecified:
+            return value
         return mask_secret(value)
 
     def unserialize(self, value):
