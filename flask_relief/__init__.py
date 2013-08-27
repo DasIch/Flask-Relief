@@ -53,7 +53,14 @@ class WebForm(relief.Form):
         if request.method == 'POST':
             raw_value = {}
             for key in self:
-                raw_value[key] = request.form.get(key, relief.Unspecified)
+                values = request.form.getlist(key)
+                if len(values) > 1:
+                    value = values
+                elif values:
+                    value = values[0]
+                else:
+                    value = relief.Unspecified
+                raw_value[key] = value
             self.set_from_raw(raw_value)
             return self.validate(context=context)
         return False
@@ -114,6 +121,17 @@ class Choice(relief.Element):
         return relief.NotUnserializable
 
 
+class MultipleChoice(Choice):
+    def unserialize(self, values):
+        if values is relief.Unspecified:
+            values = []
+        elif not isinstance(values, list):
+            values = [values]
+        if any(value not in self.choices for value in values):
+            return relief.NotUnserializable
+        return set(values)
+
+
 def _inherit_relief_exports():
     module = sys.modules[__name__]
     for attribute in relief.__all__:
@@ -124,6 +142,6 @@ def _inherit_relief_exports():
 
 __all__ = [
     'Secret', 'Relief', 'WebForm', 'Text', 'Password', 'Hidden', 'Checkbox',
-    'Choice'
+    'Choice', 'MultipleChoice'
 ]
 _inherit_relief_exports()

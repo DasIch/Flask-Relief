@@ -6,6 +6,8 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
+from itertools import chain, combinations
+
 import pytest
 import flask
 import relief
@@ -14,7 +16,7 @@ from selenium.common.exceptions import ElementNotVisibleException
 
 import flask.ext.relief
 from flask.ext.relief import (
-    Secret, WebForm, Text, Password, Hidden, Checkbox, Choice
+    Secret, WebForm, Text, Password, Hidden, Checkbox, Choice, MultipleChoice
 )
 
 
@@ -403,6 +405,74 @@ class TestChoice(object):
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'radio':
                 if input.get_attribute('value') == choice:
+                    input.click()
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+
+class TestMultipleChoice(object):
+    @pytest.fixture
+    def make_multiple_choice_app(self, app, extension):
+        def make_multiple_choice_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        {% for choice in form.foo.choices %}
+                            <input type=checkbox
+                                   name=foo
+                                   value="{{ choice }}">
+                        {% endfor %}
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_multiple_choice_app
+
+    def test_in__all__(self):
+        assert 'MultipleChoice' in flask.ext.relief.__all__
+
+    def test_init_without_choices(self):
+        with pytest.raises(TypeError):
+            MultipleChoice()
+
+    def test_unchanged(self, make_multiple_choice_app, serve, browser):
+        class Form(WebForm):
+            foo = MultipleChoice.using(choices=[u'foo', u'bar', u'baz'])
+
+        multiple_choice_app = make_multiple_choice_app(Form)
+        serve(multiple_choice_app)
+
+        browser.get('http://localhost:5000')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+    @pytest.mark.parametrize('selection', [
+        set(selection) for selection in chain.from_iterable(
+            combinations([u'foo', u'bar', u'baz'], i) for i in range(1, 4)
+        )
+    ])
+    def test_changed(self, make_multiple_choice_app, serve, browser,
+                     selection):
+        class Form(WebForm):
+            foo = MultipleChoice.using(choices=[u'foo', u'bar', u'baz'])
+
+            def validate_foo(self, element, context):
+                return element.value == selection
+
+        multiple_choice_app = make_multiple_choice_app(Form)
+        serve(multiple_choice_app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'checkbox':
+                if input.get_attribute('value') in selection:
                     input.click()
         browser.find_elements_by_tag_name('form')[0].submit()
         assert u'success' in browser.page_source
