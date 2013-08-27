@@ -12,7 +12,7 @@ import relief
 from relief.validation import IsFalse, IsTrue
 
 import flask.ext.relief
-from flask.ext.relief import Secret, WebForm, Checkbox
+from flask.ext.relief import Secret, WebForm, Text, Checkbox
 
 
 class TestModule(object):
@@ -112,6 +112,61 @@ class TestWebForm(object):
             with client.post('/', data={'foo': u'foo'}) as response:
                 assert response.status_code == 200
                 assert response.data == b'True'
+
+
+class TestText(object):
+    @pytest.fixture
+    def make_text_app(self, app, extension):
+        def make_text_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        <input type=text
+                               name=foo
+                               value="{{ form.foo.raw_value }}">
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_text_app
+
+    def test_in__all__(self):
+        assert 'Text' in flask.ext.relief.__all__
+
+    def test_unchanged(self, make_text_app, serve, browser):
+        class Form(WebForm):
+            foo = Text
+
+        text_app = make_text_app(Form)
+        serve(text_app)
+
+        browser.get('http://localhost:5000')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+    def test_changed(self, make_text_app, serve, browser):
+        class Form(WebForm):
+            foo = Text
+
+            def validate_foo(self, element, context):
+                return element.value == u'foo'
+
+        text_app = make_text_app(Form)
+        serve(text_app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'text':
+                input.send_keys(u'foo')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
 
 
 class TestCheckbox(object):

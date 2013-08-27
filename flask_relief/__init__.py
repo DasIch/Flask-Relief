@@ -81,6 +81,10 @@ class WebForm(relief.Form):
         return False
 
 
+class Text(relief.Unicode):
+    pass
+
+
 class Checkbox(relief.Boolean):
     def unserialize(self, value):
         if value is relief.Unspecified:
@@ -96,5 +100,5 @@ def _inherit_relief_exports():
             module.__all__.append(attribute)
 
 
-__all__ = ['Secret', 'Relief', 'WebForm', 'Checkbox']
+__all__ = ['Secret', 'Relief', 'WebForm', 'Text', 'Checkbox']
 _inherit_relief_exports()
