@@ -23,7 +23,7 @@ setup(
     author='Daniel Neuhäuser',
     author_email='ich@danielneuhaeuser.de',
     url='https://github.com/DasIch/Flask-Relief',
-    install_requires=['Flask>=0.10', 'Relief>=1.0.0'],
+    install_requires=['Flask>=0.10', 'Relief>=2.0.0'],
     tests_require=['pytest>=2.3.5'],
     cmdclass={'test': PyTest},
     packages=['flask_relief'],
