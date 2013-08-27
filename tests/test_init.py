@@ -12,7 +12,7 @@ import relief
 from relief.validation import IsFalse, IsTrue
 
 import flask.ext.relief
-from flask.ext.relief import Secret, WebForm, Text, Checkbox
+from flask.ext.relief import Secret, WebForm, Text, Password, Checkbox
 
 
 class TestModule(object):
@@ -164,6 +164,61 @@ class TestText(object):
         browser.get('http://localhost:5000')
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'text':
+                input.send_keys(u'foo')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+
+class TestPassword(object):
+    @pytest.fixture
+    def make_password_app(self, app, extension):
+        def make_password_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        <input type=password
+                               name=foo
+                               value="{{ form.foo.raw_value }}">
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_password_app
+
+    def test_in__all__(self):
+        assert 'Password' in flask.ext.relief.__all__
+
+    def test_unchanged(self, make_password_app, serve, browser):
+        class Form(WebForm):
+            foo = Password
+
+        password_app = make_password_app(Form)
+        serve(password_app)
+
+        browser.get('http://localhost:5000')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+    def test_changed(self, make_password_app, serve, browser):
+        class Form(WebForm):
+            foo = Password
+
+            def validate_foo(self, element, context):
+                return element.value == u'foo'
+
+        password_app = make_password_app(Form)
+        serve(password_app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'password':
                 input.send_keys(u'foo')
         browser.find_elements_by_tag_name('form')[0].submit()
         assert u'success' in browser.page_source
