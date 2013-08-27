@@ -13,7 +13,9 @@ from relief.validation import IsFalse, IsTrue
 from selenium.common.exceptions import ElementNotVisibleException
 
 import flask.ext.relief
-from flask.ext.relief import Secret, WebForm, Text, Password, Hidden, Checkbox
+from flask.ext.relief import (
+    Secret, WebForm, Text, Password, Hidden, Checkbox, Choice
+)
 
 
 class TestModule(object):
@@ -267,7 +269,6 @@ class TestHidden(object):
                 with pytest.raises(ElementNotVisibleException):
                     input.send_keys(u'bar')
         browser.find_elements_by_tag_name('form')[0].submit()
-        print browser.page_source
         assert u'success' in browser.page_source
 
 
@@ -333,5 +334,75 @@ class TestCheckbox(object):
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'checkbox':
                 input.click()
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' in browser.page_source
+
+
+class TestChoice(object):
+    @pytest.fixture
+    def make_choice_app(self, app, extension):
+        def make_choice_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        {% for choice in form.foo.choices %}
+                            <input type=radio
+                                   name=foo
+                                   value="{{ choice }}">
+                        {% endfor %}
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_choice_app
+
+    def test_in__all__(self):
+        assert 'Choice' in flask.ext.relief.__all__
+
+    def test_init_without_choices(self):
+        with pytest.raises(TypeError):
+            Choice()
+
+    def test_unserialize(self):
+        choice = Choice.using(choices=[u'foo', u'bar'])()
+        choice.set_from_raw(u'foo')
+        assert choice.value == u'foo'
+        choice.set_from_raw(u'bar')
+        assert choice.value == u'bar'
+        choice.set_from_raw(u'baz')
+        assert choice.value is relief.NotUnserializable
+
+    def test_unchanged(self, make_choice_app, serve, browser):
+        class Form(WebForm):
+            foo = Choice.using(choices=[u'foo', u'bar'])
+        choice_app = make_choice_app(Form)
+        serve(choice_app)
+
+        browser.get('http://localhost:5000')
+        browser.find_elements_by_tag_name('form')[0].submit()
+        assert u'success' not in browser.page_source
+
+    @pytest.mark.parametrize('choice', [u'foo', u'bar'])
+    def test_changed(self, make_choice_app, serve, browser, choice):
+        class Form(WebForm):
+            foo = Choice.using(choices=[u'foo', u'bar'])
+
+            def validate_foo(self, element, context):
+                return element.value == choice
+        choice_app = make_choice_app(Form)
+        serve(choice_app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'radio':
+                if input.get_attribute('value') == choice:
+                    input.click()
         browser.find_elements_by_tag_name('form')[0].submit()
         assert u'success' in browser.page_source

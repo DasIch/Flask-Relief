@@ -100,6 +100,20 @@ class Checkbox(relief.Boolean):
         return True
 
 
+class Choice(relief.Element):
+    choices = None
+
+    def __init__(self, value=relief.Unspecified):
+        super(Choice, self).__init__(value=value)
+        if self.choices is None:
+            raise TypeError('choices are undefined')
+
+    def unserialize(self, value):
+        if value in self.choices:
+            return value
+        return relief.NotUnserializable
+
+
 def _inherit_relief_exports():
     module = sys.modules[__name__]
     for attribute in relief.__all__:
@@ -109,6 +123,7 @@ def _inherit_relief_exports():
 
 
 __all__ = [
-    'Secret', 'Relief', 'WebForm', 'Text', 'Password', 'Hidden', 'Checkbox'
+    'Secret', 'Relief', 'WebForm', 'Text', 'Password', 'Hidden', 'Checkbox',
+    'Choice'
 ]
 _inherit_relief_exports()
