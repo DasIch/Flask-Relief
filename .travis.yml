@@ -29,7 +29,7 @@ matrix:
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install --use-mirrors pytest pytest-cov tox coveralls sphinx
+  - pip install --use-mirrors pytest pytest-cov selenium tox coveralls sphinx
   - pip install .
 
 script:
