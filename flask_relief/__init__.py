@@ -17,28 +17,6 @@ from flask.ext.relief.crypto import (
 )
 
 
-class Secret(relief.Unicode):
-    """
-    Represents a secret string that should not be exposed to attackers.
-
-    Ensures security by masking the string, preventing compression oracle
-    attacks.
-
-    .. warning:: This does not prevent anyone from seeing the secret, if the
-                 connection to the client is unencrypted.
-    """
-    def serialize(self, value):
-        if value is relief.Unspecified:
-            return value
-        return mask_secret(value)
-
-    def unserialize(self, value):
-        try:
-            return unmask_secret(value)
-        except TypeError:
-            return relief.NotUnserializable
-
-
 class Relief(object):
     # Methods that are defined by RFC 2616 to be safe and should not cause any
     # actions beside retrieval of information.
@@ -91,6 +69,28 @@ class Password(relief.Unicode):
 
 class Hidden(relief.Unicode):
     pass
+
+
+class Secret(Hidden):
+    """
+    Represents a secret string that should not be exposed to attackers.
+
+    Ensures security by masking the string, preventing compression oracle
+    attacks.
+
+    .. warning:: This does not prevent anyone from seeing the secret, if the
+                 connection to the client is unencrypted.
+    """
+    def serialize(self, value):
+        if value is relief.Unspecified:
+            return value
+        return mask_secret(value)
+
+    def unserialize(self, value):
+        try:
+            return unmask_secret(value)
+        except TypeError:
+            return relief.NotUnserializable
 
 
 class Checkbox(relief.Boolean):
