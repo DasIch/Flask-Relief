@@ -37,7 +37,7 @@ install:
   - pip install .
 
 script:
-  - py.test --cov=flask_relief --cov=test_flask_relief.py
+  - py.test --cov=flask_relief --cov=tests
   - tox -e style
   # ensure that the docs stuff runs only once
   - if [[ DOCUMENTATION = true ]]; then tox -e docs; fi

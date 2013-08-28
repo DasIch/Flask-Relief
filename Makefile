@@ -19,7 +19,7 @@ test-all:
 	tox
 
 coverage:
-	py.test --cov=flask_relief --cov=test_flask_relief.py
+	py.test --cov=flask_relief --cov=tests
 	coverage html
 
 view-coverage: coverage
