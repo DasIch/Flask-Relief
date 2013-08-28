@@ -36,5 +36,6 @@ setup(
     tests_require=get_test_requirements(),
     cmdclass={'test': PyTest},
     packages=['flask_relief'],
-    zip_safe=False
+    zip_safe=False,
+    include_package_data=True
 )
