@@ -6,6 +6,7 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
+import time
 from multiprocessing import Process
 
 import pytest
@@ -53,4 +54,6 @@ def serve(request):
         process = Process(target=app.run)
         request.addfinalizer(process.terminate)
         process.start()
+        time.sleep(0.1)
+        assert process.is_alive()
     return serve
