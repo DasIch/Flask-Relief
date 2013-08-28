@@ -85,6 +85,10 @@ class TestRelief(object):
                 assert response.status_code == 200
                 assert response.data == b'success'
 
+            with client.post('/', headers={'X-RELIEF-CSRF-TOKEN': csrf_token}) as response:
+                assert response.status_code == 200
+                assert response.data == b'success'
+
             with client.post('/') as response:
                 assert response.status_code == 400
 
