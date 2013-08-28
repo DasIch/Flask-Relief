@@ -54,6 +54,6 @@ def serve(request):
         process = Process(target=app.run)
         request.addfinalizer(process.terminate)
         process.start()
-        time.sleep(0.1)
+        time.sleep(0.2)
         assert process.is_alive()
     return serve
