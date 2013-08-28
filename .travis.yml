@@ -7,25 +7,38 @@ python:
   - 3.3
 
 env:
-  - REQUIREMENTS=lowest PACKAGING=true
-  - REQUIREMENTS=release PACKAGING=true
-  - REQUIREMENTS=devel PACKAGING=true
+  - REQUIREMENTS=lowest PACKAGING=true STYLE=true
+  - REQUIREMENTS=release PACKAGING=true STYLE=true
+  - REQUIREMENTS=devel PACKAGING=true STYLE=true
 
 matrix:
   exclude:
     - python: 2.6
-      env: REQUIREMENTS=lowest PACKAGING=true
+      env: REQUIREMENTS=lowest PACKAGING=true STYLE=true
     - python: 2.6
-      env: REQUIREMENTS=release PACKAGING=true
+      env: REQUIREMENTS=release PACKAGING=true STYLE=true
     - python: 2.6
-      env: REQUIREMENTS=devel PACKAGING=true
+      env: REQUIREMENTS=devel PACKAGING=true STYLE=true
   include:
     - python: 2.6
+      env: REQUIREMENTS=lowest DOCUMENTATION=true STYLE=true
+    - python: 2.6
+      env: REQUIREMENTS=release DOCUMENTATION=true STYLE=true
+    - python: 2.6
+      env: REQUIREMENTS=devel DOCUMENTATION=true STYLE=true
+    - python: pypy
       env: REQUIREMENTS=lowest DOCUMENTATION=true
-    - python: 2.6
+    - python: pypy
       env: REQUIREMENTS=release DOCUMENTATION=true
-    - python: 2.6
+    - python: pypy
       env: REQUIREMENTS=devel DOCUMENTATION=true
+  allow_failures:
+    - python: pypy
+      env: REQUIREMENTS=lowest PACKAGING=true STYLE=true
+    - python: pypy
+      env: REQUIREMENTS=release PACKAGING=true STYLE=true
+    - python: pypy
+      env: REQUIREMENTS=devel PACKAGING=true STYLE=true
 
 before_install:
   - "export DISPLAY=:99.0"
@@ -38,7 +51,7 @@ install:
 
 script:
   - py.test --cov=flask_relief --cov=tests
-  - tox -e style
+  - if [[ STYLE = true ]]; then tox -e style; fi
   # ensure that the docs stuff runs only once
   - if [[ DOCUMENTATION = true ]]; then tox -e docs; fi
   - if [[ DOCUMENTATION = true ]]; then tox -e docs3; fi
