@@ -17,7 +17,8 @@ from selenium.common.exceptions import ElementNotVisibleException
 
 import flask.ext.relief
 from flask.ext.relief import (
-    Secret, WebForm, Text, Password, Hidden, Checkbox, Choice, MultipleChoice
+    Secret, WebForm, Text, Password, Hidden, Checkbox, Choice, MultipleChoice,
+    Submit
 )
 
 
@@ -527,4 +528,45 @@ class TestMultipleChoice(object):
                 if input.get_attribute('value') in selection:
                     input.click()
         submit_form(browser)
+        assert u'success' in browser.page_source
+
+
+class TestSubmit(object):
+    def test_in__all__(self):
+        assert 'Submit' in flask.ext.relief.__all__
+
+    @pytest.mark.parametrize(('actions', 'selected'), [
+        ([u'foo'], u'foo'),
+        ([u'foo', u'bar'], u'foo'),
+        ([u'foo', u'bar'], u'bar')
+    ])
+    def test(self, extension, app, serve, browser, actions, selected):
+        class Form(WebForm):
+            action = Submit.using(actions=actions)
+
+            def validate_action(self, element, context):
+                return element.value == selected
+
+        @app.route('/', methods=['GET', 'POST'])
+        def index():
+            form = Form()
+            if form.set_and_validate_on_submit():
+                return u'success'
+            return flask.render_template_string(u"""
+                <!doctype html>
+                <form method=POST>
+                    {% for value in form.action.actions %}
+                        <input type=submit name=action value="{{ value }}">
+                    {% endfor %}
+                    <input type=hidden name=csrf_token value="{{ csrf_token }}">
+                </form>
+            """, form=form)
+
+        serve(app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('value') == selected:
+                input.click()
+                break
         assert u'success' in browser.page_source

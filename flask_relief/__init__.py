@@ -147,6 +147,20 @@ class MultipleChoice(Choice):
         return set(values)
 
 
+class Submit(relief.Element):
+    actions = []
+
+    def __init__(self, value=relief.Unspecified):
+        super(Submit, self).__init__(value=value)
+        if self.actions is None:
+            raise TypeError('actions are undefined')
+
+    def unserialize(self, value):
+        if value in self.actions:
+            return value
+        return relief.NotUnserializable
+
+
 def _inherit_relief_exports():
     module = sys.modules[__name__]
     for attribute in relief.__all__:
@@ -157,6 +171,6 @@ def _inherit_relief_exports():
 
 __all__ = [
     'Secret', 'Relief', 'WebForm', 'Text', 'Password', 'Hidden', 'Checkbox',
-    'Choice', 'MultipleChoice'
+    'Choice', 'MultipleChoice', 'Submit'
 ]
 _inherit_relief_exports()
