@@ -46,17 +46,11 @@ before_install:
 
 install:
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install --use-mirrors pytest pytest-cov selenium tox coveralls sphinx
+  - pip install --use-mirrors pytest pytest-cov selenium tox coveralls sphinx invoke
   - pip install .
 
 script:
-  - py.test --cov=flask_relief --cov=tests
-  - if [[ STYLE = true ]]; then tox -e style; fi
-  # ensure that the docs stuff runs only once
-  - if [[ DOCUMENTATION = true ]]; then tox -e docs; fi
-  - if [[ DOCUMENTATION = true ]]; then tox -e docs3; fi
-  - if [[ DOCUMENTATION = true ]]; then tox -e docs-linkcheck; fi
-  - if [[ PACKAGING = true ]]; then tox -e packaging; fi
+  - invoke travis
 
 after_success:
   - coveralls

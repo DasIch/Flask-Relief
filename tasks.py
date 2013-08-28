@@ -1,4 +1,6 @@
 # coding: utf-8
+import os
+
 from invoke import task, run
 
 
@@ -37,3 +39,16 @@ def docs():
 @task('docs')
 def view_docs():
     run('open docs/_build/html/index.html')
+
+
+@task
+def travis():
+    test()
+    environments = []
+    if 'STYLE' in os.environ:
+        environments.append('style')
+    if 'DOCUMENTATION' in os.environ:
+        environments.extend(['docs', 'docs3', 'docs-linkcheck'])
+    if 'PACKAGING' in os.environ:
+        environments.append('packaging')
+    run('tox -e %s' % ','.join(environments))
