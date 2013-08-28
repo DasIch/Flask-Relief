@@ -41,7 +41,7 @@ def extension(app):
     return Relief(app)
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def browser(request):
     browser = selenium.webdriver.Firefox()
     request.addfinalizer(browser.quit)
