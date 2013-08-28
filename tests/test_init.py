@@ -6,6 +6,7 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
+from __future__ import print_function
 from itertools import chain, combinations
 
 import pytest
@@ -18,6 +19,19 @@ import flask.ext.relief
 from flask.ext.relief import (
     Secret, WebForm, Text, Password, Hidden, Checkbox, Choice, MultipleChoice
 )
+
+
+def submit_form(browser):
+    forms = browser.find_elements_by_tag_name('form')
+    if len(forms) == 1:
+        forms[0].submit()
+    else:
+        if forms:
+            print(u'found more than one form:')
+        else:
+            print(u'found no form:')
+        print(browser.page_source)
+        assert False
 
 
 class TestModule(object):
@@ -153,7 +167,7 @@ class TestText(object):
         serve(text_app)
 
         browser.get('http://localhost:5000')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
     def test_changed(self, make_text_app, serve, browser):
@@ -170,7 +184,7 @@ class TestText(object):
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'text':
                 input.send_keys(u'foo')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
 
@@ -208,7 +222,7 @@ class TestPassword(object):
         serve(password_app)
 
         browser.get('http://localhost:5000')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
     def test_changed(self, make_password_app, serve, browser):
@@ -225,7 +239,7 @@ class TestPassword(object):
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'password':
                 input.send_keys(u'foo')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
 
@@ -270,7 +284,7 @@ class TestHidden(object):
             if input.get_attribute('type') == 'hidden':
                 with pytest.raises(ElementNotVisibleException):
                     input.send_keys(u'bar')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
 
@@ -315,7 +329,7 @@ class TestCheckbox(object):
             assert u'checked' in browser.page_source
         else:
             assert u'checked' not in browser.page_source
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
     @pytest.mark.parametrize('form', [
@@ -336,7 +350,7 @@ class TestCheckbox(object):
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'checkbox':
                 input.click()
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
 
@@ -388,7 +402,7 @@ class TestChoice(object):
         serve(choice_app)
 
         browser.get('http://localhost:5000')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' not in browser.page_source
 
     @pytest.mark.parametrize('choice', [u'foo', u'bar'])
@@ -406,7 +420,7 @@ class TestChoice(object):
             if input.get_attribute('type') == 'radio':
                 if input.get_attribute('value') == choice:
                     input.click()
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
 
@@ -450,7 +464,7 @@ class TestMultipleChoice(object):
         serve(multiple_choice_app)
 
         browser.get('http://localhost:5000')
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
 
     @pytest.mark.parametrize('selection', [
@@ -474,5 +488,5 @@ class TestMultipleChoice(object):
             if input.get_attribute('type') == 'checkbox':
                 if input.get_attribute('value') in selection:
                     input.click()
-        browser.find_elements_by_tag_name('form')[0].submit()
+        submit_form(browser)
         assert u'success' in browser.page_source
