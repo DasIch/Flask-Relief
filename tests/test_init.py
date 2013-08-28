@@ -106,6 +106,40 @@ class TestRelief(object):
             with client.post('/', data={'csrf_token': csrf_token}) as response:
                 assert response.status_code == 400
 
+    def test_jquery_csrf_js(self, extension, app, serve, browser, jquery_url):
+        @app.route('/', methods=['GET', 'POST'])
+        def index():
+            if flask.request.method == 'POST':
+                json = flask.request.get_json()
+                return flask.jsonify(result=json['a'] + json['b'])
+            elif flask.request.method == 'GET':
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <meta name=csrf-token content="{{ csrf_token }}">
+                    <script type=text/javascript src="{{ jquery }}"></script>
+                    <script type=text/javascript
+                            src="{{ url_for('relief.static', filename='jquery-csrf.js') }}">
+                    </script>
+                    <script type=text/javascript>
+                        $.ajax({
+                            type: 'POST',
+                            url: '/',
+                            data: '{"a": 1, "b": 1}',
+                            contentType: 'application/json',
+                            success: function(response) {
+                                $('#result').text(response.result)
+                            }
+                        });
+                    </script>
+                    <p id=result></p>
+                """, jquery=jquery_url)
+
+        serve(app)
+
+        browser.get('http://localhost:5000')
+        result = browser.find_element_by_id('result')
+        assert result.text == u'2'
+
 
 class TestWebForm(object):
     def test_in__all__(self):

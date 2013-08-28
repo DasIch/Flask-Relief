@@ -9,11 +9,18 @@
 import sys
 
 import relief
-from flask import request, abort, session
+from flask import request, abort, session, Blueprint
 
 from flask.ext.relief.csrf import touch_csrf_token
 from flask.ext.relief.crypto import (
     constant_time_equal, mask_secret, unmask_secret
+)
+
+
+blueprint = Blueprint(
+    'relief', __name__,
+    static_folder='static',
+    static_url_path='/static/relief'
 )
 
 
@@ -29,6 +36,7 @@ class Relief(object):
     def init_app(self, app):
         app.context_processor(self._inject_csrf_token)
         app.before_request(self._check_csrf_token)
+        app.register_blueprint(blueprint)
 
     def reset_csrf_token(self):
         del session['_csrf_token']
@@ -41,7 +49,14 @@ class Relief(object):
         if request.method in self.CSRF_SAFE_METHODS:
             return
         try:
-            request_csrf_token = unmask_secret(request.form['csrf_token'])
+            masked_csrf_token = request.form['csrf_token']
+        except KeyError:
+            try:
+                masked_csrf_token = request.headers['X-RELIEF-CSRF-Token']
+            except KeyError:
+                abort(400)
+        try:
+            request_csrf_token = unmask_secret(masked_csrf_token)
         except TypeError:
             abort(400)
         if not constant_time_equal(request_csrf_token, csrf_token):

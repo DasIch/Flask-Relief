@@ -6,14 +6,20 @@
     :copyright: 2013 by Daniel Neuhäuser
     :license: BSD, see LICENSE.rst for details
 """
+import os
 import time
 from multiprocessing import Process
 
 import pytest
 import selenium.webdriver
-from flask import Flask
+from flask import Flask, Blueprint
+from werkzeug.urls import url_join
 
 from flask.ext.relief import Relief
+
+
+TESTS_DIR_PATH = os.path.abspath(os.path.dirname(__file__))
+JQUERY_DIR_PATH = os.path.join(TESTS_DIR_PATH, 'jquery')
 
 
 @pytest.fixture
@@ -57,3 +63,19 @@ def serve(request):
         time.sleep(0.2)
         assert process.is_alive()
     return serve
+
+
+@pytest.fixture(params=os.listdir(JQUERY_DIR_PATH))
+def jquery_path(request):
+    return os.path.join(JQUERY_DIR_PATH, request.param)
+
+
+@pytest.fixture
+def jquery_url(app, jquery_path):
+    app.register_blueprint(Blueprint(
+        'jquery', __name__, static_folder='jquery',
+        static_url_path='/static/jquery'
+    ))
+    return url_join(
+        'http://localhost:5000/static/jquery/', os.path.basename(jquery_path)
+    )
