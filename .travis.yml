@@ -45,9 +45,9 @@ before_install:
   - "sh -e /etc/init.d/xvfb start"
 
 install:
+  - pip install --use-mirrors invoke coveralls
   - pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install --use-mirrors pytest pytest-cov selenium tox coveralls sphinx invoke
-  - pip install .
+  - invoke dev
 
 script:
   - invoke travis

@@ -1,8 +1,12 @@
 # coding: utf-8
+import os
 import sys
 
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
+
+
+PROJECT_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
 class PyTest(TestCommand):
@@ -16,6 +20,11 @@ class PyTest(TestCommand):
         sys.exit(pytest.main(self.test_args))
 
 
+def get_test_requirements():
+    with open(os.path.join(PROJECT_PATH, 'test-requirements.txt')) as f:
+        return f.readlines()
+
+
 setup(
     name='Flask-Relief',
     version='0.1.0-dev',
@@ -24,7 +33,7 @@ setup(
     author_email='ich@danielneuhaeuser.de',
     url='https://github.com/DasIch/Flask-Relief',
     install_requires=['Flask>=0.10', 'Relief>=2.0.0'],
-    tests_require=['pytest>=2.3.5', 'selenium>=2.35.0'],
+    tests_require=get_test_requirements(),
     cmdclass={'test': PyTest},
     packages=['flask_relief'],
     zip_safe=False
