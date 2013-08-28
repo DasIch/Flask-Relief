@@ -1,7 +1,7 @@
 *.pyc
 .DS_Store
 .tox/
-*.egg/
+*.egg
 *.egg-info/
 .coverage
 htmlcov/
