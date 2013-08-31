@@ -17,8 +17,8 @@ from selenium.common.exceptions import ElementNotVisibleException
 
 import flask.ext.relief
 from flask.ext.relief import (
-    Secret, WebForm, Text, Password, Hidden, Checkbox, Choice, MultipleChoice,
-    Submit
+    Secret, WebForm, Text, Email, Password, Hidden, Checkbox, Choice,
+    MultipleChoice, Submit
 )
 
 
@@ -223,6 +223,57 @@ class TestText(object):
         for input in browser.find_elements_by_tag_name('input'):
             if input.get_attribute('type') == 'text':
                 input.send_keys(u'foo')
+        submit_form(browser)
+        assert u'success' in browser.page_source
+
+
+class TestEmail(object):
+    @pytest.fixture
+    def make_email_app(self, app, extension):
+        def make_email_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        <input type=email
+                               name=foo
+                               value="{{ form.foo.raw_value }}">
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_email_app
+
+    def test_in__all__(self):
+        assert 'Email' in flask.ext.relief.__all__
+
+    def test_validation(self):
+        email = Email()
+        email.set_from_raw(u'foo')
+        assert not email.validate()
+        email.set_from_raw(u'foo@bar.baz')
+        assert email.validate()
+
+    def test(self, make_email_app, serve, browser):
+        class Form(WebForm):
+            foo = Email
+
+            def validate_foo(self, element, context):
+                return element.value == u'foo@bar.baz'
+
+        email_app = make_email_app(Form)
+        serve(email_app)
+
+        browser.get('http://localhost:5000')
+        for input in browser.find_elements_by_tag_name('input'):
+            if input.get_attribute('type') == 'email':
+                input.send_keys(u'foo@bar.baz')
         submit_form(browser)
         assert u'success' in browser.page_source
 

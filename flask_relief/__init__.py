@@ -9,6 +9,7 @@
 import sys
 
 import relief
+from relief.validation import ProbablyAnEmailAddress
 from flask import request, abort, session, Blueprint
 
 from flask.ext.relief.csrf import touch_csrf_token
@@ -83,6 +84,15 @@ class WebForm(relief.Form):
 
 class Text(relief.Unicode):
     pass
+
+
+class Email(relief.Unicode):
+    validators = [ProbablyAnEmailAddress(allow_unspecified=True)]
+
+    def unserialize(self, value):
+        if value == u'':
+            return relief.Unspecified
+        return value
 
 
 class Password(relief.Unicode):
@@ -170,7 +180,7 @@ def _inherit_relief_exports():
 
 
 __all__ = [
-    'Secret', 'Relief', 'WebForm', 'Text', 'Password', 'Hidden', 'Checkbox',
-    'Choice', 'MultipleChoice', 'Submit'
+    'Secret', 'Relief', 'WebForm', 'Text', 'Email', 'Password', 'Hidden',
+    'Checkbox', 'Choice', 'MultipleChoice', 'Submit'
 ]
 _inherit_relief_exports()
