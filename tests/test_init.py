@@ -18,7 +18,7 @@ from selenium.common.exceptions import ElementNotVisibleException
 import flask.ext.relief
 from flask.ext.relief import (
     Secret, WebForm, Text, Email, Password, Hidden, Checkbox, Choice,
-    MultipleChoice, Submit
+    MultipleChoice, Submit, Option, OptGroup, Select
 )
 
 
@@ -578,6 +578,92 @@ class TestMultipleChoice(object):
             if input.get_attribute('type') == 'checkbox':
                 if input.get_attribute('value') in selection:
                     input.click()
+        submit_form(browser)
+        assert u'success' in browser.page_source
+
+
+class TestOption(object):
+    def test_in__all__(self):
+        assert 'Option' in flask.ext.relief.__all__
+
+    def test_label(self):
+        option = Option(u'foo')
+        assert option.value == option.label == u'foo'
+        option.label = u'bar'
+        assert option.value == u'foo'
+        assert option.label == u'bar'
+        option.label = None
+        assert option.value == option.label == u'foo'
+
+    def test_repr(self):
+        assert (
+            repr(Option('foo')) ==
+            "Option('foo', label='foo', selected=False, disabled=False)"
+        )
+
+
+class TestOptGroup(object):
+    def test_in__all__(self):
+        assert 'OptGroup' in flask.ext.relief.__all__
+
+    def test_repr(self):
+        assert repr(OptGroup('foo', [Option('bar')])) == (
+            "OptGroup('foo', ["
+            "Option('bar', label='bar', selected=False, disabled=False)"
+            "], disabled=False)"
+        )
+
+
+class TestSelect(object):
+    @pytest.fixture
+    def make_select_app(self, app, extension):
+        def make_select_app(Form):
+            @app.route('/', methods=['GET', 'POST'])
+            def index():
+                form = Form()
+                if form.set_and_validate_on_submit():
+                    return u'success'
+                return flask.render_template_string(u"""
+                    <!doctype html>
+                    <form method=POST>
+                        <select name=foo>
+                            {% for option in form.foo.options %}
+                                <option label="{{ option.label }}">{{ option.value }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type=hidden
+                               name=csrf_token
+                               value="{{ csrf_token }}">
+                    </form>
+                """, form=form)
+            return app
+        return make_select_app
+
+    def test_in__all__(self):
+        assert 'Select' in flask.ext.relief.__all__
+
+    def test_init_without_options(self):
+        with pytest.raises(TypeError):
+            Select()
+
+    @pytest.mark.parametrize('selection', [u'foo', u'bar'])
+    def test(self, make_select_app, serve, browser, selection):
+        class Form(WebForm):
+            foo = Select.using(options=[
+                Option(u'foo'),
+                Option(u'bar')
+            ])
+
+            def validate_foo(self, element, context):
+                return element.value == selection
+
+        select_app = make_select_app(Form)
+        serve(select_app)
+
+        browser.get('http://localhost:5000')
+        for option in browser.find_elements_by_tag_name('option'):
+            if option.get_attribute('value') == selection:
+                option.click()
         submit_form(browser)
         assert u'success' in browser.page_source
 

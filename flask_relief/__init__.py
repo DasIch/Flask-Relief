@@ -157,6 +157,51 @@ class MultipleChoice(Choice):
         return set(values)
 
 
+class Option(object):
+    def __init__(self, value, label=None, selected=False, disabled=False):
+        self.value = value
+        self.label = label
+        self.selected = selected
+        self.disabled = disabled
+
+    @property
+    def label(self):
+        if self._label is None:
+            return self.value
+        return self._label
+
+    @label.setter
+    def label(self, new_label):
+        self._label = new_label
+
+    def __repr__(self):
+        return '%s(%r, label=%r, selected=%r, disabled=%r)' % (
+            self.__class__.__name__, self.value, self.label, self.selected,
+            self.disabled
+        )
+
+
+class OptGroup(object):
+    def __init__(self, label, options, disabled=False):
+        self.label = label
+        self.options = options
+        self.disabled = disabled
+
+    def __repr__(self):
+        return '%s(%r, %r, disabled=%r)' % (
+            self.__class__.__name__, self.label, self.options, self.disabled
+        )
+
+
+class Select(relief.Element):
+    options = None
+
+    def __init__(self, value=relief.Unspecified):
+        super(Select, self).__init__(value=value)
+        if self.options is None:
+            raise TypeError('options are undefined')
+
+
 class Submit(relief.Element):
     actions = []
 
@@ -181,6 +226,7 @@ def _inherit_relief_exports():
 
 __all__ = [
     'Secret', 'Relief', 'WebForm', 'Text', 'Email', 'Password', 'Hidden',
-    'Checkbox', 'Choice', 'MultipleChoice', 'Submit'
+    'Checkbox', 'Choice', 'MultipleChoice', 'Submit', 'Option', 'OptGroup',
+    'Select'
 ]
 _inherit_relief_exports()
