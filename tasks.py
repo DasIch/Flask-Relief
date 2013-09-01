@@ -6,9 +6,9 @@ from invoke import task, run
 
 @task
 def dev():
-    run('pip install -r test-requirements.txt')
-    run('pip install -r dev-requirements.txt')
-    run('pip install -e .')
+    run('pip install --use-mirrors -r test-requirements.txt')
+    run('pip install --use-mirrors -r dev-requirements.txt')
+    run('pip install --use-mirrors -e .')
 
 
 @task
