@@ -46,7 +46,7 @@ before_install:
 
 install:
   - pip install --use-mirrors invoke coveralls
-  - pip install -r .travis-$REQUIREMENTS-requirements.txt
+  - pip install --use-mirrors -r .travis-$REQUIREMENTS-requirements.txt
   - invoke dev
 
 script:
