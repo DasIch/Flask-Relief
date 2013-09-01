@@ -8,6 +8,7 @@
 """
 import os
 import time
+import traceback
 from multiprocessing import Process
 
 import pytest
@@ -50,7 +51,13 @@ def extension(app):
 @pytest.fixture(scope='session')
 def browser(request):
     browser = selenium.webdriver.Firefox()
-    request.addfinalizer(browser.quit)
+
+    def quit():
+        try:
+            browser.quit()
+        except IOError:
+            traceback.print_exc()
+    request.addfinalizer(quit)
     return browser
 
 
