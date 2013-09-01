@@ -195,11 +195,26 @@ class OptGroup(object):
 
 class Select(relief.Element):
     options = None
+    multiple = False
 
     def __init__(self, value=relief.Unspecified):
         super(Select, self).__init__(value=value)
         if self.options is None:
             raise TypeError('options are undefined')
+
+    def unserialize(self, value):
+        if self.multiple:
+            if value is relief.Unspecified:
+                values = set()
+            elif isinstance(value, list):
+                values = set(value)
+            else:
+                values = set([value])
+            return set(values)
+        else:
+            if any(value == option.value for option in self.options):
+                return value
+        return relief.NotUnserializable
 
 
 class Submit(relief.Element):

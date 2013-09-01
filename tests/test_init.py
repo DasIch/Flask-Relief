@@ -626,7 +626,7 @@ class TestSelect(object):
                 return flask.render_template_string(u"""
                     <!doctype html>
                     <form method=POST>
-                        <select name=foo>
+                        <select name=foo {% if form.foo.multiple %}multiple{% endif %}>
                             {% for option in form.foo.options %}
                                 <option label="{{ option.label }}">{{ option.value }}</option>
                             {% endfor %}
@@ -646,12 +646,52 @@ class TestSelect(object):
         with pytest.raises(TypeError):
             Select()
 
+    def test_validate(self):
+        element = Select.using(options=[Option(u'foo'), Option(u'bar')])()
+        element.set_from_raw(u'foo')
+        assert element.value == element.raw_value == u'foo'
+        assert element.validate()
+        element.set_from_raw(u'bar')
+        assert element.value == element.raw_value == u'bar'
+        assert element.validate()
+        element.set_from_raw(u'baz')
+        assert element.value is relief.NotUnserializable
+        assert element.raw_value == u'baz'
+        assert not element.validate()
+
     @pytest.mark.parametrize('selection', [u'foo', u'bar'])
-    def test(self, make_select_app, serve, browser, selection):
+    def test_single(self, make_select_app, serve, browser, selection):
         class Form(WebForm):
             foo = Select.using(options=[
                 Option(u'foo'),
                 Option(u'bar')
+            ])
+
+            def validate_foo(self, element, context):
+                assert element.value == selection
+                return element.value == selection
+
+        select_app = make_select_app(Form)
+        serve(select_app)
+
+        browser.get('http://localhost:5000')
+        for option in browser.find_elements_by_tag_name('option'):
+            if option.get_attribute('value') == selection:
+                option.click()
+        submit_form(browser)
+        assert u'success' in browser.page_source
+
+    @pytest.mark.parametrize('selection', [
+        set(selection) for selection in chain.from_iterable(
+            combinations([u'foo', u'bar', u'baz'], i) for i in range(1, 4)
+        )
+    ])
+    def test_multiple(self, make_select_app, serve, browser, selection):
+        class Form(WebForm):
+            foo = Select.using(multiple=True, options=[
+                Option(u'foo'),
+                Option(u'bar'),
+                Option(u'baz')
             ])
 
             def validate_foo(self, element, context):
@@ -662,7 +702,7 @@ class TestSelect(object):
 
         browser.get('http://localhost:5000')
         for option in browser.find_elements_by_tag_name('option'):
-            if option.get_attribute('value') == selection:
+            if option.text in selection:
                 option.click()
         submit_form(browser)
         assert u'success' in browser.page_source
