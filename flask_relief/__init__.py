@@ -87,7 +87,7 @@ class Text(relief.Unicode):
 
 
 class Email(relief.Unicode):
-    validators = [ProbablyAnEmailAddress(allow_unspecified=True)]
+    validators = [ProbablyAnEmailAddress()]
 
     def unserialize(self, value):
         if value == u'':
