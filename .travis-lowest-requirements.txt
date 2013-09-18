@@ -1,2 +1,2 @@
 Flask==0.10
-Relief==2.0.0
+Relief==2.1.0
